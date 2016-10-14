@@ -106,12 +106,19 @@ static NSString * const CollectionCellReuseIdentifier = @"CollectionCell";
     [[PHPhotoLibrary sharedPhotoLibrary] unregisterChangeObserver:self];
 }
 
+- (NSArray *) correctMediaTypes {
+    if ([self.picker isKindOfClass: [GMImagePickerController class]] && [self.picker.queryMediaTypes isKindOfClass: [NSArray class]] && ([self.picker.queryMediaTypes count] > 0)) {
+        return self.picker.queryMediaTypes;
+    } else {
+        return @[@(PHAssetMediaTypeImage)];
+    }
+}
+
 -(void)updateFetchResults
 {
     //What I do here is fetch both the albums list and the assets of each album.
     //This way I have acces to the number of items in each album, I can load the 3
     //thumbnails directly and I can pass the fetched result to the gridViewController.
-
     self.collectionsFetchResultsAssets=nil;
     self.collectionsFetchResultsTitles=nil;
 
@@ -122,10 +129,11 @@ static NSString * const CollectionCellReuseIdentifier = @"CollectionCell";
     //All album: Sorted by descending creation date.
     NSMutableArray *allFetchResultArray = [[NSMutableArray alloc] init];
     NSMutableArray *allFetchResultLabel = [[NSMutableArray alloc] init];
+
     {
         PHFetchOptions *options = [[PHFetchOptions alloc] init];
 
-        options.predicate = [NSPredicate predicateWithFormat:@"mediaType in %@", self.picker.queryMediaTypes];
+        options.predicate = [NSPredicate predicateWithFormat:@"mediaType in %@", [self correctMediaTypes]];
         options.sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:NO]];
         PHFetchResult *assetsFetchResult = [PHAsset fetchAssetsWithOptions:options];
         [allFetchResultArray addObject:assetsFetchResult];
@@ -140,7 +148,7 @@ static NSString * const CollectionCellReuseIdentifier = @"CollectionCell";
         if ([collection isKindOfClass:[PHAssetCollection class]])
         {
             PHFetchOptions *options = [[PHFetchOptions alloc] init];
-            options.predicate = [NSPredicate predicateWithFormat:@"mediaType in %@", self.picker.queryMediaTypes];
+            options.predicate = [NSPredicate predicateWithFormat:@"mediaType in %@", [self correctMediaTypes]];
             PHAssetCollection *assetCollection = (PHAssetCollection *)collection;
 
             //Albums collections are allways PHAssetCollectionType=1 & PHAssetCollectionSubtype=2
@@ -165,7 +173,7 @@ static NSString * const CollectionCellReuseIdentifier = @"CollectionCell";
             if(self.picker.customSmartCollections && [self.picker.customSmartCollections containsObject:@(assetCollection.assetCollectionSubtype)])
             {
                 PHFetchOptions *options = [[PHFetchOptions alloc] init];
-                options.predicate = [NSPredicate predicateWithFormat:@"mediaType in %@", self.picker.queryMediaTypes];
+                options.predicate = [NSPredicate predicateWithFormat:@"mediaType in %@", [self correctMediaTypes]];
                 options.sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:NO]];
 
                 PHFetchResult *assetsFetchResult = [PHAsset fetchAssetsInAssetCollection:assetCollection options:options];
